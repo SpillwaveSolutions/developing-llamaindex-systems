@@ -2,14 +2,16 @@
 name: developing-llamaindex-systems
 description: >-
   Production-grade agentic system development with LlamaIndex in Python.
-  Covers semantic ingestion (SemanticSplitterNodeParser, IngestionPipeline),
+  Covers semantic ingestion (SemanticSplitterNodeParser, CodeSplitter, IngestionPipeline),
+  retrieval strategies (BM25Retriever, hybrid search, alpha weighting),
   PropertyGraphIndex with graph stores (Neo4j), context RAG (RouterQueryEngine,
   SubQuestionQueryEngine, LLMRerank), agentic orchestration (ReAct, Workflows,
   FunctionTool), and observability (Arize Phoenix). Use when asked to
-  "build a LlamaIndex agent", "set up semantic chunking", "create a knowledge
-  graph with LlamaIndex", "implement query routing", "debug RAG pipeline",
-  "add Phoenix observability", or "create an event-driven workflow".
-  Triggers on "PropertyGraphIndex", "SemanticSplitterNodeParser",
+  "build a LlamaIndex agent", "set up semantic chunking", "index source code",
+  "implement hybrid search", "create a knowledge graph with LlamaIndex",
+  "implement query routing", "debug RAG pipeline", "add Phoenix observability",
+  or "create an event-driven workflow". Triggers on "PropertyGraphIndex",
+  "SemanticSplitterNodeParser", "CodeSplitter", "BM25Retriever", "hybrid search",
   "ReAct agent", "Workflow pattern", "LLMRerank", "Text-to-Cypher".
 allowed-tools:
   - Read
@@ -19,7 +21,7 @@ allowed-tools:
   - Grep
   - Glob
 metadata:
-  version: 1.1.0
+  version: 1.2.0
   last-updated: 2025-12-28
   category: frameworks
   python-version: ">=3.9"
@@ -104,11 +106,12 @@ For production script, run: `python scripts/ingest_semantic.py`
 
 ## Architecture Overview
 
-Five pillars for agentic systems:
+Six pillars for agentic systems:
 
 | Pillar | Purpose | Reference |
 |--------|---------|-----------|
-| **Ingestion** | Semantic chunking, metadata enrichment | [references/ingestion.md](references/ingestion.md) |
+| **Ingestion** | Semantic chunking, code splitting, metadata | [references/ingestion.md](references/ingestion.md) |
+| **Retrieval** | BM25 keyword search, hybrid fusion | [references/retrieval-strategies.md](references/retrieval-strategies.md) |
 | **Property Graphs** | Knowledge graphs + vector hybrid | [references/property-graphs.md](references/property-graphs.md) |
 | **Context RAG** | Query routing, decomposition, reranking | [references/context-rag.md](references/context-rag.md) |
 | **Orchestration** | ReAct agents, event-driven Workflows | [references/orchestration.md](references/orchestration.md) |
@@ -121,22 +124,48 @@ Five pillars for agentic systems:
 ### Which Node Parser?
 
 ```
-Need semantic coherence (legal, technical docs)?
-├─ Yes → SemanticSplitterNodeParser
-│        buffer_size=1 (sensitive), 3 (stable)
-│        breakpoint_percentile_threshold=95 (fewer chunks), 70 (more chunks)
-│        → See: references/ingestion.md#semanticsplitternodeparser
+Is the content source code?
+├─ Yes → CodeSplitter
+│        language="python" (or typescript, javascript, java, go)
+│        chunk_lines=40, chunk_lines_overlap=15
+│        → See: references/ingestion.md#codesplitter
 │
-├─ No, prioritize speed → SentenceSplitter
-│        chunk_size=1024, chunk_overlap=20
-│        → See: references/ingestion.md#sentencesplitter
-│
-└─ Need fine-grained retrieval with context → SentenceWindowNodeParser
-         window_size=3 (surrounding sentences in metadata)
-         → See: references/ingestion.md#sentencewindownodeparser
+└─ No, it's documents:
+    ├─ Need semantic coherence (legal, technical docs)?
+    │   └─ Yes → SemanticSplitterNodeParser
+    │            buffer_size=1 (sensitive), 3 (stable)
+    │            breakpoint_percentile_threshold=95 (fewer), 70 (more)
+    │            → See: references/ingestion.md#semanticsplitternodeparser
+    │
+    ├─ Prioritize speed → SentenceSplitter
+    │        chunk_size=1024, chunk_overlap=20
+    │        → See: references/ingestion.md#sentencesplitter
+    │
+    └─ Need fine-grained retrieval → SentenceWindowNodeParser
+             window_size=3 (surrounding sentences in metadata)
+             → See: references/ingestion.md#sentencewindownodeparser
 ```
 
 **Trade-off:** Semantic chunking requires embedding calls during ingestion (cost + latency).
+
+### Which Retrieval Mode?
+
+```
+Query contains exact terms (function names, error codes, IDs)?
+├─ Yes, exact match critical → BM25
+│        retriever = BM25Retriever.from_defaults(nodes=nodes)
+│        → See: references/retrieval-strategies.md#bm25retriever
+│
+├─ Conceptual/semantic query → Vector
+│        retriever = index.as_retriever(similarity_top_k=5)
+│        → See: references/context-rag.md
+│
+└─ Mixed or unknown query type → Hybrid (recommended default)
+         alpha=0.5 (equal weight), 0.3 (favor BM25), 0.7 (favor vector)
+         → See: references/retrieval-strategies.md#hybrid-search
+```
+
+**Trade-off:** Hybrid adds BM25 index overhead but provides most robust retrieval.
 
 ### Which Graph Extractor?
 
