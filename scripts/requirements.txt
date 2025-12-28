@@ -1,0 +1,40 @@
+# LlamaIndex Agentic Systems - Dependencies
+# Install: pip install -r requirements.txt
+# Last verified: 2025-12-28
+
+# Core Framework (pin major.minor for stability)
+llama-index-core>=0.10.0,<0.12.0
+
+# LLM Providers
+llama-index-llms-openai>=0.1.0,<0.3.0
+# llama-index-llms-anthropic>=0.1.0,<0.3.0  # Uncomment for Claude
+# llama-index-llms-mistralai>=0.1.0,<0.3.0  # Uncomment for Mistral
+
+# Embedding Models
+llama-index-embeddings-openai>=0.1.0,<0.3.0
+# llama-index-embeddings-huggingface>=0.1.0,<0.3.0  # Uncomment for local
+
+# Graph Stores
+llama-index-graph-stores-neo4j>=0.1.0,<0.3.0
+# llama-index-graph-stores-nebula>=0.1.0,<0.3.0
+# llama-index-graph-stores-falkordb>=0.1.0,<0.3.0
+
+# File Readers
+llama-index-readers-file>=0.1.0,<0.3.0
+
+# Postprocessors / Rerankers
+# llama-index-postprocessor-cohere-rerank>=0.1.0,<0.3.0
+sentence-transformers>=2.2.0,<3.0.0
+
+# Observability
+arize-phoenix>=3.0.0,<5.0.0
+
+# Async Support
+nest-asyncio>=1.5.0,<2.0.0
+
+# Environment
+python-dotenv>=1.0.0,<2.0.0
+
+# Utilities
+networkx>=3.0,<4.0
+pydantic>=2.0.0,<3.0.0

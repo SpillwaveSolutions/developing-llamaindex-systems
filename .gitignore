@@ -1,0 +1,90 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# LlamaIndex storage
+storage/
+./storage/
+**/storage/
+index_store.json
+vector_store.json
+docstore.json
+graph_store.json
+
+# Neo4j
+neo4j-data/
+
+# Phoenix/Observability
+phoenix_data/
+.arize/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Environment files
+.env
+.env.local
+.env.notion
+.env.*
+*.env
+
+# Data files (user should manage their own data)
+data/
+*.pdf
+*.docx
+*.csv
+
+# Cache
+.cache/
+*.cache
