@@ -6,6 +6,7 @@ Deep dive into data ingestion, chunking strategies, and metadata enrichment.
 
 - [IngestionPipeline](#ingestionpipeline)
 - [Node Parsers](#node-parsers)
+  - [CodeSplitter](#codesplitter)
   - [SemanticSplitterNodeParser](#semanticsplitternodeparser)
   - [SentenceSplitter](#sentencesplitter)
   - [SentenceWindowNodeParser](#sentencewindownodeparser)
@@ -127,6 +128,156 @@ redis_kvstore.delete("ingestion_cache:doc_hash_abc123")
 
 ## Node Parsers
 
+### CodeSplitter
+
+AST-aware code chunking that respects function and class boundaries. Uses tree-sitter for parsing.
+
+#### Why AST-Aware Chunking?
+
+Standard text splitters break code at arbitrary character boundaries, losing context:
+
+```python
+# Bad: Function split mid-implementation
+def calculate_tax(amount):
+    rate = 0.15
+    if amount > 10000:
+        rate = 0.25
+# --- chunk boundary ---
+    return amount * rate  # Lost context!
+```
+
+CodeSplitter chunks at logical boundaries (functions, classes, methods).
+
+#### Basic Usage
+
+```python
+from llama_index.core.node_parser import CodeSplitter
+
+splitter = CodeSplitter(
+    language="python",      # Required: target language
+    chunk_lines=40,         # Lines per chunk
+    chunk_lines_overlap=15, # Overlap between chunks
+    max_chars=1500,         # Maximum characters per chunk
+)
+
+# From documents
+nodes = splitter.get_nodes_from_documents(documents)
+```
+
+**Prerequisites:**
+```bash
+pip install llama-index tree-sitter tree-sitter-languages
+```
+
+#### Supported Languages
+
+| Language | Tree-sitter Name | File Extensions |
+|----------|------------------|-----------------|
+| Python | `python` | .py |
+| TypeScript | `typescript` | .ts |
+| TSX | `tsx` | .tsx |
+| JavaScript | `javascript` | .js |
+| JSX | `jsx` | .jsx |
+| Java | `java` | .java |
+| Go | `go` | .go |
+| Rust | `rust` | .rs |
+| C++ | `cpp` | .cpp, .hpp |
+| C | `c` | .c, .h |
+
+#### Configuration
+
+```python
+splitter = CodeSplitter(
+    language="python",
+    chunk_lines=40,         # Target lines per chunk
+    chunk_lines_overlap=15, # Context preservation
+    max_chars=1500,         # Hard limit for LLM context
+)
+```
+
+**Parameters:**
+
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `chunk_lines=40` | 40 | Target chunk size in lines |
+| `chunk_lines_overlap=15` | 15 | Lines of context overlap |
+| `max_chars=1500` | 1500 | Character limit (prevents huge functions) |
+
+#### Extracting Code Metadata
+
+Combine CodeSplitter with metadata extraction for richer search:
+
+```python
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.node_parser import CodeSplitter
+from llama_index.core.extractors import SummaryExtractor
+
+pipeline = IngestionPipeline(
+    transformations=[
+        CodeSplitter(language="python", chunk_lines=40),
+        SummaryExtractor(),  # Generate natural language descriptions
+        embed_model,
+    ]
+)
+
+nodes = pipeline.run(documents=code_documents)
+# Each node now has:
+# - text: The code chunk
+# - metadata.section_summary: "This function calculates tax..."
+```
+
+#### Multi-Language Corpus
+
+Handle mixed-language codebases:
+
+```python
+from pathlib import Path
+
+LANGUAGE_MAP = {
+    ".py": "python",
+    ".ts": "typescript",
+    ".tsx": "tsx",
+    ".js": "javascript",
+    ".jsx": "jsx",
+    ".java": "java",
+    ".go": "go",
+}
+
+
+def get_code_splitter(file_path: str) -> CodeSplitter:
+    """Return appropriate splitter for file type."""
+    ext = Path(file_path).suffix.lower()
+    language = LANGUAGE_MAP.get(ext, "python")
+    return CodeSplitter(
+        language=language,
+        chunk_lines=40,
+        chunk_lines_overlap=15,
+    )
+
+
+# Process each file with correct splitter
+all_nodes = []
+for doc in documents:
+    splitter = get_code_splitter(doc.metadata.get("file_path", ""))
+    nodes = splitter.get_nodes_from_documents([doc])
+
+    # Add language metadata
+    for node in nodes:
+        node.metadata["language"] = splitter.language
+        node.metadata["source_type"] = "code"
+
+    all_nodes.extend(nodes)
+```
+
+#### When to Use
+
+- **Source code indexing**: SDK code, library implementations
+- **Code search**: Find functions by name or behavior
+- **Documentation generation**: Code + docs in unified corpus
+- **Tutorial writing**: Reference actual implementation patterns
+
+---
+
 ### SemanticSplitterNodeParser
 
 Embedding-based chunking that preserves logical coherence.
@@ -240,13 +391,13 @@ query_engine = index.as_query_engine(
 
 ## Node Parser Comparison
 
-| Feature | SemanticSplitter | SentenceSplitter | SentenceWindow |
-|---------|------------------|------------------|----------------|
-| Splitting Logic | Embedding similarity | Token count | Single sentence |
-| Context Preservation | Thematic | Arbitrary overlap | Metadata window |
-| Chunk Size | Variable | Fixed | 1 sentence |
-| Ingestion Cost | High (embeddings) | Negligible | Low |
-| Best For | Complex reasoning | Bulk processing | Fine-grained QA |
+| Feature | CodeSplitter | SemanticSplitter | SentenceSplitter | SentenceWindow |
+|---------|--------------|------------------|------------------|----------------|
+| Splitting Logic | AST boundaries | Embedding similarity | Token count | Single sentence |
+| Context Preservation | Function/class scope | Thematic | Arbitrary overlap | Metadata window |
+| Chunk Size | Variable (logical) | Variable | Fixed | 1 sentence |
+| Ingestion Cost | Low (parsing) | High (embeddings) | Negligible | Low |
+| Best For | Source code | Complex reasoning | Bulk processing | Fine-grained QA |
 
 ---
 
