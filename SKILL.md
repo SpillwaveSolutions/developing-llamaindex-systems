@@ -384,8 +384,6 @@ query_engine = index.as_query_engine(
 
 **Verify:** Re-run query, check Phoenix shows improved relevance scores (>0.7).
 
-→ **Deep dive:** [references/observability.md#retrieval-failures](references/observability.md#retrieval-failures)
-
 ### Semantic chunking too slow
 
 **Diagnose:**
@@ -409,8 +407,6 @@ critical_nodes = SemanticSplitterNodeParser(...).get_nodes_from_documents(critic
 ```
 
 **Verify:** Re-run with `show_progress=True`, confirm <1s per document.
-
-→ **Deep dive:** [references/ingestion.md#performance-tuning](references/ingestion.md#performance-tuning)
 
 ### Graph extraction producing noise
 
@@ -436,8 +432,6 @@ SchemaLLMPathExtractor(
 
 **Verify:** Re-index, confirm triplet count reduced and relationships are relevant.
 
-→ **Deep dive:** [references/property-graphs.md#extractor-comparison](references/property-graphs.md#extractor-comparison)
-
 ### Workflow step not triggering
 
 **Diagnose:**
@@ -460,8 +454,6 @@ async def my_step(self, ev: MyEvent) -> StopEvent:  # Type hint must be MyEvent
 ```
 
 **Verify:** Verbose output shows `[my_step] Received event: MyEvent`.
-
-→ **Deep dive:** [references/orchestration.md#steps](references/orchestration.md#steps)
 
 ### Phoenix not showing traces
 
@@ -486,8 +478,6 @@ from llama_index.core import VectorStoreIndex
 ```
 
 **Verify:** Make a query, refresh Phoenix UI, trace appears within 5 seconds.
-
-→ **Deep dive:** [references/observability.md#arize-phoenix-integration](references/observability.md#arize-phoenix-integration)
 
 ---
 

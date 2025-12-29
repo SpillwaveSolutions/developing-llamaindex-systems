@@ -8,6 +8,7 @@ Dynamic query routing, decomposition, and retrieval refinement.
   - [Selector Types](#selector-types)
   - [QueryEngineTool Setup](#queryenginetool-setup)
   - [Router Implementation](#router-implementation)
+  - [Query Routing Examples](#query-routing-examples)
 - [SubQuestionQueryEngine](#subquestionqueryengine)
 - [NodePostprocessors](#nodepostprocessors)
   - [SimilarityPostprocessor](#similaritypostprocessor)
@@ -126,6 +127,17 @@ router = RouterQueryEngine(
 response = router.query("What is this document about?")  # → summary_tool
 response = router.query("What was Q3 revenue?")          # → sql_tool
 ```
+
+### Query Routing Examples
+
+| Input Query | Routed To | Reason |
+|-------------|-----------|--------|
+| "What is this document about?" | `summary_tool` | High-level overview request matches summary description |
+| "What was Q3 revenue?" | `sql_tool` | Specific number query matches structured data description |
+| "List the key themes" | `summary_tool` | Thematic request matches "thematic overviews" |
+| "How many employees joined in 2024?" | `sql_tool` | Count query matches "counts, and database records" |
+| "What date was the contract signed?" | `detail_tool` | Specific date matches "dates, and precise details" |
+| "Summarize the main findings" | `summary_tool` | Summary request matches "high-level summaries" |
 
 ---
 
